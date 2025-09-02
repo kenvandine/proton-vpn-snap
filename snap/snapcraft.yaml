@@ -90,73 +90,26 @@ compression: lzo
 platforms:
   amd64:
 
-# TODO: Create app
-#apps:
-#  protonvpn:
-#    command: usr/bin/protonvpn
-#    desktop: snap/gui/protonvpn.desktop
-#    extensions:
-#      - gnome
-#    plugs:
-#      - desktop
-#      - desktop-legacy
-#      - wayland
-#      - unity7
-#      - x11
-#      - network
-#      - network-bind
+apps:
+  protonvpn:
+    command: usr/bin/protonvpn-app
+    desktop: usr/share/applications/protonvpn-app.desktop
+    extensions: [gnome]
+    plugs:
+      - network
+      - network-bind
+
+package-repositories:
+  - type: apt
+    architectures: [amd64]
+    components: [main]
+    suites: [stable]
+    url: https://repo.protonvpn.com/debian
+    key-id: 84B0D3492C76C9C6F5873C18EDA3E22630349F1C
 
 parts:
-  python-proton-core:
-    plugin: python
-    source-type: git
-    source: https://github.com/ProtonVPN/python-proton-core.git
-
-  python-proton-keyring-linux:
-    plugin: python
-    source-type: git
-    source: https://github.com/ProtonVPN/python-proton-keyring-linux.git
-    after:
-      - python-proton-core
-
-  python-proton-vpn-local-agent:
-    plugin: python
-    source-type: git
-    source: https://github.com/ProtonVPN/python-proton-vpn-local-agent.git
-    source-submodules: []
-    after:
-      - python-proton-core
-      - python-proton-keyring-linux
-
-  python-proton-vpn-api-core:
-    plugin: python
-    source-type: git
-    source: https://github.com/ProtonVPN/python-proton-vpn-api-core.git
-    source-submodules: []
-    after:
-      - python-proton-core
-      - python-proton-keyring-linux
-      - python-proton-vpn-local-agent
-
-  python-proton-vpn-network-manager:
-    plugin: python
-    source-type: git
-    source: https://github.com/ProtonVPN/python-proton-vpn-network-manager.git
-    after:
-      - python-proton-core
-      - python-proton-keyring-linux
-      - python-proton-vpn-local-agent
-      - python-proton-vpn-api-core
-
   protonvpn:
-    plugin: python
-    source-type: git
-    source: https://github.com/ProtonVPN/proton-vpn-gtk-app.git
-    source-tag: v$SNAPCRAFT_PROJECT_VERSION
-    source-submodules: []
-    after:
-      - python-proton-core
-      - python-proton-keyring-linux
-      - python-proton-vpn-local-agent
-      - python-proton-vpn-api-core
-      - python-proton-vpn-network-manager
+    source: .
+    plugin: nil
+    stage-packages:
+      - proton-vpn-gnome-desktop
