@@ -1,6 +1,5 @@
-# TODO: 'snapcraft register <name>'
 name: protonvpn
-version: 4.14.1
+adopt-info: protonvpn
 icon: snap/gui/protonvpn.svg
 title: Proton VPN
 summary: Secures your internet and protects your online privacy
@@ -124,7 +123,6 @@ apps:
       - network-manager
       - network-control
       - password-manager-service
-      - unity7 # For status notifier
       - login-session-observe # For VPN reconnect on session unlock
     environment:
       PYTHONPATH: $SNAP/usr/lib/python3/dist-packages:${PYTHONPATH:-}
@@ -137,11 +135,12 @@ parts:
       - python3-xdg
       - librsvg2-common
       - iproute2
-    override-prime: |
+    override-build: |
       craftctl default
-      cd $CRAFT_PRIME && python3 ${CRAFT_PROJECT_DIR}/snap/local/patches/patch-tray-indicator.py
-      cd $CRAFT_PRIME && python3 ${CRAFT_PROJECT_DIR}/snap/local/patches/patch-session-monitor.py
-      cd $CRAFT_PRIME && python3 ${CRAFT_PROJECT_DIR}/snap/local/patches/patch-tray-icon.py
+      craftctl set version=$(dpkg-parsechangelog -l $CRAFT_PART_INSTALL/usr/share/doc/proton-vpn-gtk-app/changelog.gz -S Version)
+      cd $CRAFT_PART_INSTALL && python3 ${CRAFT_PROJECT_DIR}/snap/local/patches/patch-tray-indicator.py
+      cd $CRAFT_PART_INSTALL && python3 ${CRAFT_PROJECT_DIR}/snap/local/patches/patch-session-monitor.py
+      cd $CRAFT_PART_INSTALL && python3 ${CRAFT_PROJECT_DIR}/snap/local/patches/patch-tray-icon.py
 
   launcher:
     plugin: nil
