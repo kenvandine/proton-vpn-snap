@@ -1,0 +1,31 @@
+#!/bin/bash
+# The gnome platform's libpixbufloader_svg.so needs a newer librsvg than Ubuntu 24.04
+# provides (missing rsvg_handle_get_pixbuf_and_error). We rebuild the GdkPixbuf loaders
+# cache using the platform loaders (minus the broken SVG one) plus our snap's SVG loader
+# from librsvg2-common, which is compatible with the Ubuntu 24.04 librsvg.
+
+ARCH="x86_64-linux-gnu"
+SNAP_LOADERS="$SNAP/usr/lib/$ARCH/gdk-pixbuf-2.0/2.10.0/loaders"
+PLATFORM_LOADERS="$SNAP/gnome-platform/usr/lib/$ARCH/gdk-pixbuf-2.0/2.10.0/loaders"
+GDK_QUERY="$SNAP/gnome-platform/usr/lib/$ARCH/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders"
+
+if [ -n "$GDK_PIXBUF_MODULE_FILE" ] && [ -d "$SNAP_LOADERS" ] && [ -f "$GDK_QUERY" ]; then
+    # Build a temp loaders dir: symlink all platform loaders except the broken SVG one
+    TMPDIR_LOADERS=$(mktemp -d)
+    for loader in "$PLATFORM_LOADERS"/libpixbufloader*.so; do
+        [ -f "$loader" ] || continue
+        case "$(basename "$loader")" in
+            *svg*) continue ;;
+        esac
+        ln -sf "$loader" "$TMPDIR_LOADERS/$(basename "$loader")"
+    done
+
+    # Regenerate cache: platform loaders (no svg) then our snap's svg loader
+    TMPFILE=$(mktemp)
+    GDK_PIXBUF_MODULEDIR="$TMPDIR_LOADERS" "$GDK_QUERY" > "$TMPFILE"
+    GDK_PIXBUF_MODULEDIR="$SNAP_LOADERS"   "$GDK_QUERY" >> "$TMPFILE"
+    mv "$TMPFILE" "$GDK_PIXBUF_MODULE_FILE"
+    rm -rf "$TMPDIR_LOADERS"
+fi
+
+exec "$@"

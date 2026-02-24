@@ -1,6 +1,6 @@
 # TODO: 'snapcraft register <name>'
 name: protonvpn
-version: 4.9.5
+version: 4.14.1
 icon: snap/gui/protonvpn.svg
 title: Proton VPN
 summary: Secures your internet and protects your online privacy
@@ -83,80 +83,68 @@ issues: https://github.com/pedro-avalos/protonvpn-snap/issues
 source-code: https://github.com/ProtonVPN/proton-vpn-gtk-app
 
 base: core24
-grade: devel
-confinement: devmode
+grade: stable
+confinement: strict
 compression: lzo
 
 platforms:
   amd64:
 
-# TODO: Create app
-#apps:
-#  protonvpn:
-#    command: usr/bin/protonvpn
-#    desktop: snap/gui/protonvpn.desktop
-#    extensions:
-#      - gnome
-#    plugs:
-#      - desktop
-#      - desktop-legacy
-#      - wayland
-#      - unity7
-#      - x11
-#      - network
-#      - network-bind
+package-repositories:
+  - type: apt
+    url: https://repo.protonvpn.com/debian
+    suites: [stable]
+    components: [main]
+    architectures: [amd64]
+    key-id: 84B0D3492C76C9C6F5873C18EDA3E22630349F1C
+
+slots:
+  dbus-protonvpn:
+    interface: dbus
+    bus: session
+    name: proton.vpn.app.gtk
+  status-notifier-item:
+    interface: dbus
+    bus: session
+    name: org.kde.StatusNotifierItem-proton.vpn.app.gtk
+
+apps:
+  protonvpn:
+    command: usr/bin/protonvpn-app
+    command-chain:
+      - bin/protonvpn-launcher
+    desktop: usr/share/applications/proton.vpn.app.gtk.desktop
+    extensions: [ gnome ]
+    slots:
+      - dbus-protonvpn
+      - status-notifier-item
+    plugs:
+      - network
+      - network-bind
+      - network-manager
+      - network-control
+      - password-manager-service
+      - unity7 # For status notifier
+      - login-session-observe # For VPN reconnect on session unlock
+    environment:
+      PYTHONPATH: $SNAP/usr/lib/python3/dist-packages:${PYTHONPATH:-}
 
 parts:
-  python-proton-core:
-    plugin: python
-    source-type: git
-    source: https://github.com/ProtonVPN/python-proton-core.git
-
-  python-proton-keyring-linux:
-    plugin: python
-    source-type: git
-    source: https://github.com/ProtonVPN/python-proton-keyring-linux.git
-    after:
-      - python-proton-core
-
-  python-proton-vpn-local-agent:
-    plugin: python
-    source-type: git
-    source: https://github.com/ProtonVPN/python-proton-vpn-local-agent.git
-    source-submodules: []
-    after:
-      - python-proton-core
-      - python-proton-keyring-linux
-
-  python-proton-vpn-api-core:
-    plugin: python
-    source-type: git
-    source: https://github.com/ProtonVPN/python-proton-vpn-api-core.git
-    source-submodules: []
-    after:
-      - python-proton-core
-      - python-proton-keyring-linux
-      - python-proton-vpn-local-agent
-
-  python-proton-vpn-network-manager:
-    plugin: python
-    source-type: git
-    source: https://github.com/ProtonVPN/python-proton-vpn-network-manager.git
-    after:
-      - python-proton-core
-      - python-proton-keyring-linux
-      - python-proton-vpn-local-agent
-      - python-proton-vpn-api-core
-
   protonvpn:
-    plugin: python
-    source-type: git
-    source: https://github.com/ProtonVPN/proton-vpn-gtk-app.git
-    source-tag: v$SNAPCRAFT_PROJECT_VERSION
-    source-submodules: []
-    after:
-      - python-proton-core
-      - python-proton-keyring-linux
-      - python-proton-vpn-local-agent
-      - python-proton-vpn-api-core
-      - python-proton-vpn-network-manager
+    plugin: nil
+    stage-packages:
+      - proton-vpn-gnome-desktop
+      - python3-xdg
+      - librsvg2-common
+      - iproute2
+    override-prime: |
+      craftctl default
+      cd $CRAFT_PRIME && python3 ${CRAFT_PROJECT_DIR}/snap/local/patches/patch-tray-indicator.py
+      cd $CRAFT_PRIME && python3 ${CRAFT_PROJECT_DIR}/snap/local/patches/patch-session-monitor.py
+      cd $CRAFT_PRIME && python3 ${CRAFT_PROJECT_DIR}/snap/local/patches/patch-tray-icon.py
+
+  launcher:
+    plugin: nil
+    override-build: |
+      install -D -m 755 ${CRAFT_PROJECT_DIR}/snap/local/protonvpn-launcher \
+        ${CRAFT_PART_INSTALL}/bin/protonvpn-launcher
