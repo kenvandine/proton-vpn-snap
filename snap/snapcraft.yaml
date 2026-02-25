@@ -1,4 +1,4 @@
-name: protonvpn
+name: proton-vpn
 adopt-info: protonvpn
 icon: snap/gui/protonvpn.svg
 title: Proton VPN
@@ -108,7 +108,7 @@ slots:
     name: org.kde.StatusNotifierItem-proton.vpn.app.gtk
 
 apps:
-  protonvpn:
+  proton-vpn:
     command: usr/bin/protonvpn-app
     command-chain:
       - bin/protonvpn-launcher
